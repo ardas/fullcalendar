@@ -451,6 +451,7 @@ Grid.mixin({
 				dropLocation = _this.computeExternalDrop(cell, meta);
 				if (dropLocation) {
 					_this.renderDrag(dropLocation); // called without a seg parameter
+					_this.view.trigger('drag', el, dropLocation.start, ev, ui);
 				}
 				else { // invalid drop cell
 					disableCursor();
@@ -459,6 +460,7 @@ Grid.mixin({
 			cellOut: function() {
 				dropLocation = null; // signal unsuccessful
 				_this.destroyDrag();
+				_this.view.trigger('dragOut', el, ev, ui);
 				enableCursor();
 			},
 			dragStop: function() {
@@ -594,7 +596,7 @@ Grid.mixin({
 	// Called before event segment resizing starts
 	segResizeStart: function(seg, ev) {
 		this.isResizingSeg = true;
-		this.view.trigger('eventResizeStart', seg.el[0], seg.event, ev, {}); // last argument is jqui dummy
+		seg.event.resizeOptions = this.view.trigger('eventResizeStart', seg.el[0], seg.event, ev, {}); // last argument is jqui dummy
 	},
 
 
@@ -602,6 +604,7 @@ Grid.mixin({
 	segResizeStop: function(seg, ev) {
 		this.isResizingSeg = false;
 		this.view.trigger('eventResizeStop', seg.el[0], seg.event, ev, {}); // last argument is jqui dummy
+		delete seg.event.resizeOptions;
 	},
 
 
@@ -658,6 +661,14 @@ Grid.mixin({
 			}
 			else { // resizing the end?
 				range.end = range.start.clone().add(defaultDuration);
+			}
+		}
+
+		if (event.resizeOptions && event.resizeOptions.maxDuration) {
+			var maxEnd = range.start.clone().add(event.resizeOptions.maxDuration);
+
+			if (range.end.isAfter(maxEnd)) {
+				range.end = maxEnd;
 			}
 		}
 
